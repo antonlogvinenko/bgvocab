@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::io::{self, prelude::*, BufReader, Lines};
 
@@ -8,7 +8,7 @@ fn lines(path: &str) -> io::Result<Lines<BufReader<File>>> {
     Ok(reader.lines())
 }
 
-fn add_to_vocabulary(vocab: &mut HashMap<String, Vec<String>>, str: &String) {
+fn add_to_vocabulary(vocab: &mut BTreeMap<String, Vec<String>>, str: &String) {
     //No, xml parsers make this code even worse
     let x1 = str.split_at(92).1;
     let pos = x1.find("\">").expect("Unparseable line");
@@ -19,15 +19,13 @@ fn add_to_vocabulary(vocab: &mut HashMap<String, Vec<String>>, str: &String) {
     //remove stress
     let chill = key.replace('\u{0301}', "");
 
-    // println!("chill key: {}", chill);
-
     vocab.entry(chill).or_insert(Vec::new()).push(value);
 }
 
-fn get_vocabulary() -> HashMap<String, Vec<String>> {
+fn get_vocabulary() -> BTreeMap<String, Vec<String>> {
     let vocab_path = "./bg-en.xml";
 
-    let mut vocabulary: HashMap<String, Vec<String>> = HashMap::new();
+    let mut vocabulary: BTreeMap<String, Vec<String>> = BTreeMap::new();
 
     for line in lines(vocab_path).expect("Can't read vocabulary") {
         match line {
@@ -39,13 +37,25 @@ fn get_vocabulary() -> HashMap<String, Vec<String>> {
         }
     }
 
-    vocabulary
+    //skip entries with names
+    vocabulary.into_iter().skip(2287).collect()
 }
 
 fn main() -> io::Result<()> {
     let vocab = get_vocabulary();
 
-    println!("{:?}", vocab.iter().filter(|e| e.1.len() == 1).count());
+    let batch: usize = 0;
+    let batch_size = 100;
+
+    println!("Batches amount: {}", vocab.len() / batch_size);
+
+    let batch_vocab: BTreeMap<String, Vec<String>> = vocab
+        .into_iter()
+        .skip(batch * batch_size)
+        .take(batch_size)
+        .collect();
+
+    println!("{}", batch_vocab.iter().count());
 
     Ok(())
 }
