@@ -3,12 +3,12 @@ use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
 use std::collections::BTreeMap;
-use thiserror::Error;
 use std::fs::File;
 use std::io::{self, prelude::*, BufReader, Lines};
 use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
+use thiserror::Error;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Color, Style};
 use tui::widgets::{Block, BorderType, Borders, Paragraph};
@@ -17,7 +17,6 @@ use tui::{backend::CrosstermBackend, Terminal};
 //todo handling errors
 //todo project description
 //todo installation/compliation description
-
 
 enum Event<I> {
     Input(I),
@@ -166,6 +165,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 KeyCode::Char('q') => {
                     disable_raw_mode()?;
                     terminal.show_cursor()?;
+                    crossterm::execute!(
+                        terminal.backend_mut(),
+                        LeaveAlternateScreen,
+                        DisableMouseCapture
+                    )?;
                     break;
                 }
                 // KeyCode::Char('h') => active_menu_item = MenuItem::Home,
@@ -175,17 +179,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Event::Tick => {}
         }
     }
-
-    // thread::sleep(Duration::from_millis(10000));
-
-    // restore terminal
-    disable_raw_mode()?;
-    // crossterm::execute!(
-    //     terminal.backend_mut(),
-    //     LeaveAlternateScreen,
-    //     DisableMouseCapture
-    // )?;
-    // terminal.show_cursor()?;
 
     Ok(())
 }
