@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::{self, prelude::*, BufReader, Lines};
 use std::sync::mpsc;
-use std::thread;
+use std::thread::{self};
 use std::time::{Duration, Instant};
 use thiserror::Error;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
@@ -79,6 +79,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .take(batch_size)
         .collect();
 
+    let keys: Vec<&String> = batch_vocab.keys().collect();
+
     let (tx, rx) = mpsc::channel();
     let tick_rate = Duration::from_millis(200);
 
@@ -114,9 +116,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
 
+    let mut index = 0;
+
     loop {
-        let word: &str = "the word 2";
-        let translation: String = html2text::from_read("<h1>Cake is a</h1> <b>lie</b>".as_bytes(), 100);
+        let word = *keys.get(index).expect("must be in vocab");
+        let translation: String = html2text::from_read(
+            batch_vocab
+                .get(word)
+                .expect("must be in vocab")
+                .get(0)
+                .expect("must be in vocab")
+                .as_bytes(),
+            100,
+        );
 
         //todo add loop here
         terminal.draw(|f| {
@@ -136,9 +148,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let wordWidget = Paragraph::new(Text::styled(
                 word,
                 Style::default()
-                    .fg(Color::Green)
+                    .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
-            )).style(Style::default())
+            ))
+            .style(Style::default())
             .block(
                 Block::default()
                     .title(Span::styled("The word", Style::default().fg(Color::White)))
@@ -147,15 +160,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             f.render_widget(wordWidget, chunks[0]);
 
-            let translationWidget = Paragraph::new(
-                translation
-            ).style(Style::default())
-            .block(
+            let translationWidget = Paragraph::new(translation).style(Style::default()).block(
                 Block::default()
-                    .title(Span::styled("The translation", Style::default().fg(Color::White)))
+                    .title(Span::styled(
+                        "The translation",
+                        Style::default().fg(Color::White),
+                    ))
                     .borders(Borders::ALL),
             );
             f.render_widget(translationWidget, chunks[1]);
+
+            let helpWidget = Paragraph::new(Text::styled(
+                "Press Enter for the next word; q to exit",
+                Style::default()
+                    // .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ))
+            .style(Style::default())
+            .block(
+                Block::default()
+                    .title(Span::styled("Help", Style::default().fg(Color::White)))
+                    .borders(Borders::ALL),
+            );
+            f.render_widget(helpWidget, chunks[2]);
         })?;
 
         match rx.recv()? {
@@ -170,7 +197,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     )?;
                     break;
                 }
-                KeyCode::Right => {}
+                KeyCode::Right | KeyCode::Enter => {
+                    index += 1;
+                }
                 // KeyCode::Char('h') => active_menu_item = MenuItem::Home,
                 // KeyCode::Char('p') => active_menu_item = MenuItem::Pets,
                 _ => {}
