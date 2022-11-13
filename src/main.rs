@@ -1,7 +1,9 @@
-use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, Event as CEvent, KeyCode};
+use clap::Parser;
+use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, Event as CEvent, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
+use core::panic;
 use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::{self, prelude::*, BufReader, Lines};
@@ -15,10 +17,30 @@ use tui::text::{Span, Text};
 use tui::widgets::{Block, BorderType, Borders, Paragraph};
 use tui::{backend::CrosstermBackend, Terminal};
 
-//todo parse arguments: batch size, batch number
+//todo 4 shift + enter for scrolling back
+//todo 2 switching vocabularies
+//todo 3 not showing translation key
+//todo 2 show both words in translation
+//todo better layout/formatting
+
+
+//todo managing words
+
+//todo better help section
+//how to build compile
+
 //todo handling errors
 //todo project description
 //todo installation/compliation description
+
+#[derive(Parser)]
+struct Cli {
+    #[arg(long)]
+    batch_size: usize,
+
+    #[arg(long)]
+    batch_number: usize,
+}
 
 enum Event<I> {
     Input(I),
@@ -64,19 +86,22 @@ fn get_vocabulary() -> BTreeMap<String, Vec<String>> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let vocab = get_vocabulary();
+    let args = Cli::parse();
 
-    let batch: usize = 0;
-    let batch_size = 100;
+    if args.batch_size <= 2 {
+        panic!("Batch size of less than 2 words? You make no sense.");
+    }
+
+    let vocab = get_vocabulary();
 
     println!("Length {}", vocab.len());
 
-    println!("Batches amount: {}", vocab.len() / batch_size);
+    println!("Batches amount: {}", vocab.len() / args.batch_size);
 
     let batch_vocab: BTreeMap<String, Vec<String>> = vocab
         .into_iter()
-        .skip(batch * batch_size)
-        .take(batch_size)
+        .skip(args.batch_number * args.batch_size)
+        .take(args.batch_size)
         .collect();
 
     let keys: Vec<&String> = batch_vocab.keys().collect();
@@ -145,11 +170,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )
                 .split(f.size());
 
+
+            let text = format!(" [{}/{}]    {}", index + 1, args.batch_size, word);
             let wordWidget = Paragraph::new(Text::styled(
-                word,
+                text,
                 Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
+                    .fg(Color::White)
+                    .add_modifier(Modifier::BOLD)
             ))
             .style(Style::default())
             .block(
@@ -157,6 +184,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .title(Span::styled("The word", Style::default().fg(Color::White)))
                     .borders(Borders::ALL),
             );
+
 
             f.render_widget(wordWidget, chunks[0]);
 
@@ -198,7 +226,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     break;
                 }
                 KeyCode::Right | KeyCode::Enter => {
-                    index += 1;
+                    if event.modifiers.contains(KeyModifiers::SHIFT) {
+                        index -= 1;
+                    } else {
+                        index += 1;
+                    }
+                    index = index % keys.len();
                 }
                 // KeyCode::Char('h') => active_menu_item = MenuItem::Home,
                 // KeyCode::Char('p') => active_menu_item = MenuItem::Pets,
