@@ -10,10 +10,12 @@ use std::thread;
 use std::time::{Duration, Instant};
 use thiserror::Error;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
-use tui::style::{Color, Style};
+use tui::style::{Color, Modifier, Style};
+use tui::text::{Span, Text};
 use tui::widgets::{Block, BorderType, Borders, Paragraph};
 use tui::{backend::CrosstermBackend, Terminal};
 
+//todo parse arguments: batch size, batch number
 //todo handling errors
 //todo project description
 //todo installation/compliation description
@@ -113,33 +115,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     terminal.clear()?;
 
     loop {
+        let word: &str = "the word 2";
+        let translation: String = html2text::from_read("<h1>Cake is a</h1> <b>lie</b>".as_bytes(), 100);
+
         //todo add loop here
         terminal.draw(|f| {
-            let copyright = Paragraph::new("pet-CLI 2020 - all rights reserved")
-                .style(Style::default().fg(Color::LightCyan))
-                .alignment(Alignment::Center)
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .style(Style::default().fg(Color::White))
-                        .title("Copyright")
-                        .border_type(BorderType::Plain),
-                );
-            let size = f.size();
-            let chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .margin(2)
-                .constraints(
-                    [
-                        Constraint::Length(3),
-                        Constraint::Min(2),
-                        Constraint::Length(3),
-                    ]
-                    .as_ref(),
-                )
-                .split(size);
-            f.render_widget(copyright, chunks[2]);
-
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
@@ -152,12 +132,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .as_ref(),
                 )
                 .split(f.size());
-            let word = Block::default().title(" Word ").borders(Borders::ALL);
-            // f.render_widget(word, chunks[0]);
-            let translation = Block::default()
-                .title(" Translation ")
-                .borders(Borders::ALL);
-            // f.render_widget(translation, chunks[1]);
+
+            let wordWidget = Paragraph::new(Text::styled(
+                word,
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            )).style(Style::default())
+            .block(
+                Block::default()
+                    .title(Span::styled("The word", Style::default().fg(Color::White)))
+                    .borders(Borders::ALL),
+            );
+
+            f.render_widget(wordWidget, chunks[0]);
+
+            let translationWidget = Paragraph::new(
+                translation
+            ).style(Style::default())
+            .block(
+                Block::default()
+                    .title(Span::styled("The translation", Style::default().fg(Color::White)))
+                    .borders(Borders::ALL),
+            );
+            f.render_widget(translationWidget, chunks[1]);
         })?;
 
         match rx.recv()? {
@@ -172,6 +170,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     )?;
                     break;
                 }
+                KeyCode::Right => {}
                 // KeyCode::Char('h') => active_menu_item = MenuItem::Home,
                 // KeyCode::Char('p') => active_menu_item = MenuItem::Pets,
                 _ => {}
