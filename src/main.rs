@@ -1,5 +1,5 @@
 use clap::Parser;
-use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, Event as CEvent, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, Event as CEvent, KeyCode, KeyModifiers};
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
@@ -10,11 +10,10 @@ use std::io::{self, prelude::*, BufReader, Lines};
 use std::sync::mpsc;
 use std::thread::{self};
 use std::time::{Duration, Instant};
-use thiserror::Error;
-use tui::layout::{Alignment, Constraint, Direction, Layout};
+use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
 use tui::text::{Span, Text};
-use tui::widgets::{Block, BorderType, Borders, Paragraph};
+use tui::widgets::{Block, Borders, Paragraph};
 use tui::{backend::CrosstermBackend, Terminal};
 
 //todo 4 shift + enter for scrolling back
@@ -172,7 +171,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
             let text = format!(" [{}/{}]    {}", index + 1, args.batch_size, word);
-            let wordWidget = Paragraph::new(Text::styled(
+            let word_widget = Paragraph::new(Text::styled(
                 text,
                 Style::default()
                     .fg(Color::White)
@@ -186,9 +185,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
 
 
-            f.render_widget(wordWidget, chunks[0]);
+            f.render_widget(word_widget, chunks[0]);
 
-            let translationWidget = Paragraph::new(translation).style(Style::default()).block(
+            let translation_widget = Paragraph::new(translation).style(Style::default()).block(
                 Block::default()
                     .title(Span::styled(
                         "The translation",
@@ -196,9 +195,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     ))
                     .borders(Borders::ALL),
             );
-            f.render_widget(translationWidget, chunks[1]);
+            f.render_widget(translation_widget, chunks[1]);
 
-            let helpWidget = Paragraph::new(Text::styled(
+            let help_widget = Paragraph::new(Text::styled(
                 "Press Enter for the next word; q to exit",
                 Style::default()
                     // .fg(Color::Cyan)
@@ -210,7 +209,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .title(Span::styled("Help", Style::default().fg(Color::White)))
                     .borders(Borders::ALL),
             );
-            f.render_widget(helpWidget, chunks[2]);
+            f.render_widget(help_widget, chunks[2]);
         })?;
 
         match rx.recv()? {
