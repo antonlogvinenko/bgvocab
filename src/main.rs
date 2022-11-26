@@ -29,6 +29,9 @@ struct Cli {
 
     #[arg(long)]
     en: bool,
+
+    #[arg(long)]
+    quiz: bool,
 }
 
 enum Event<I> {
@@ -113,7 +116,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::parse();
 
     if args.batch_size <= 2 {
-        panic!("Batch size of less than 2 words? You make no sense.");
+        panic!("Batch size of less than 2 words? You make no sense dear.");
     }
 
     let vocab = if args.en {
@@ -177,22 +180,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // )?;
     terminal.clear()?;
 
+    let step = if args.quiz { 1 } else { 2 };
     let mut index = 0;
-    //stretch indexation twice, /2 is index word, isEven is whether to show translation
-    //do +2 by default then add +1 via app key
     loop {
-        let word = *keys.get(index).expect("must be in vocab");
-        let translation: String = html2text::from_read(
-            batch_vocab
-                .get(word)
-                .expect("must be in vocab")
-                .get(0)
-                .expect("must be in vocab")
-                .as_bytes(),
-            100,
-        );
+        let mut word_index = index / 2;
 
-        //todo add loop here
+        let word = *keys.get(word_index).expect("must be in vocab");
+
+        let translation: String = if args.quiz && index % 2 == 0 {
+            String::default()
+        } else {
+            html2text::from_read(
+                batch_vocab
+                    .get(word)
+                    .expect("must be in vocab")
+                    .get(0)
+                    .expect("must be in vocab")
+                    .as_bytes(),
+                100,
+            )
+        };
+
         terminal.draw(|f| {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
@@ -207,7 +215,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )
                 .split(f.size());
 
-            let text = format!(" [{}/{}] \n\n {}\n", index + 1, args.batch_size, word);
+            let text = format!(" [{}/{}] \n\n {}\n", word_index + 1, args.batch_size, word);
             let word_widget = Paragraph::new(Text::styled(
                 text,
                 Style::default()
@@ -273,13 +281,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 KeyCode::Backspace => {
                     index = if index == 0 {
-                        keys.len() - 1
+                        keys.len() * 2 - step
                     } else {
-                        (index - 1) % keys.len()
+                        (index - step) % (keys.len() * 2)
                     };
                 }
                 KeyCode::Enter => {
-                    index = (index + 1) % keys.len();
+                    index = (index + step) % (keys.len() * 2);
                 }
                 // KeyCode::Char('h') => active_menu_item = MenuItem::Home,
                 // KeyCode::Char('p') => active_menu_item = MenuItem::Pets,
