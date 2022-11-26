@@ -1,9 +1,6 @@
 use clap::Parser;
 use core::panic;
-use std::process::exit;
-use crossterm::event::{
-    self, DisableMouseCapture, EnableMouseCapture, Event as CEvent, KeyCode,
-};
+use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, Event as CEvent, KeyCode};
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
@@ -59,7 +56,7 @@ fn add_to_vocabulary(vocab: &mut BTreeMap<String, Vec<String>>, str: &String) {
     vocab.entry(chill).or_insert(Vec::new()).push(value);
 }
 
-fn get_vocabulary() -> BTreeMap<String, Vec<String>> {
+fn get_en_vocabulary() -> BTreeMap<String, Vec<String>> {
     let vocab_path = "./bg-en.xml";
     let mut vocabulary: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for line in lines(vocab_path).expect("Can't read vocabulary") {
@@ -76,7 +73,7 @@ fn get_vocabulary() -> BTreeMap<String, Vec<String>> {
     vocabulary.into_iter().skip(2287).collect()
 }
 
-fn get_vocabulary2() -> BTreeMap<String, Vec<String>> {
+fn get_ru_vocabulary() -> BTreeMap<String, Vec<String>> {
     let vocab_path = "./vocab.txt";
     let mut vocabulary: BTreeMap<String, Vec<String>> = BTreeMap::new();
     let mut x = lines(vocab_path).expect("must");
@@ -121,16 +118,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let vocab = if args.en {
-        get_vocabulary()
+        get_en_vocabulary()
     } else {
-        get_vocabulary2()
+        get_ru_vocabulary()
     };
 
     let vocab_size = vocab.len();
     println!("Words in the dictionary: {:?}", vocab.len());
-
-    let mut x = String::from("aasd");
-    x.insert_str(1, "\u{0301}");
 
     println!("Batches amount: {}", vocab.len() / args.batch_size);
 
@@ -142,7 +136,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if batch_vocab.len() == 0 {
         eprintln!("Sorry, no words in vocabulary in this range. Try batches of smaller size or batches with smaller indices.");
-        exit(0);
+        return Ok(());
     }
 
     let keys: Vec<&String> = batch_vocab.keys().collect();
@@ -159,14 +153,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             if event::poll(timeout).expect("poll works") {
                 if let CEvent::Key(key) = event::read().expect("can read events") {
-                    // println!(">>> Sending Event");
                     tx.send(Event::Input(key)).expect("can send events");
                 }
             }
 
             if last_tick.elapsed() >= tick_rate {
                 if let Ok(_) = tx.send(Event::Tick) {
-                    // println!(">>> Sending OK");
                     last_tick = Instant::now();
                 }
             }
@@ -178,12 +170,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     crossterm::execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
-    // let mut terminal = Terminal::with_options(
-    //     backend,
-    //     TerminalOptions {
-    //         viewport: Viewport::fixed(Rect {x: 100, y: 0, width: 200, height:200})
-    //     },
-    // )?;
     terminal.clear()?;
 
     let step = if args.quiz { 1 } else { 2 };
@@ -213,9 +199,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .margin(1)
                 .constraints(
                     [
-                        Constraint::Percentage(10),
-                        Constraint::Percentage(70),
                         Constraint::Percentage(20),
+                        Constraint::Percentage(50),
+                        Constraint::Percentage(30),
                     ]
                     .as_ref(),
                 )
@@ -251,7 +237,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
             f.render_widget(translation_widget, chunks[1]);
 
-            let mut content: String = String::from(format!("\n Vocabulary size: {} words", vocab_size));
+            let mut content: String =
+                String::from(format!("\n Vocabulary size: {} words", vocab_size));
             content = content
                 .add("\n")
                 .add("\n Press:")
@@ -261,7 +248,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let help_widget = Paragraph::new(Text::styled(
                 content,
                 Style::default()
-                    // .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
             ))
             .style(Style::default())
@@ -295,8 +281,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 KeyCode::Enter => {
                     index = (index + step) % (keys.len() * 2);
                 }
-                // KeyCode::Char('h') => active_menu_item = MenuItem::Home,
-                // KeyCode::Char('p') => active_menu_item = MenuItem::Pets,
                 _ => {}
             },
             Event::Tick => {}
@@ -305,7 +289,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
-
 
 //todo better help section
 //todo how to build compile
