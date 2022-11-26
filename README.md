@@ -15,3 +15,6 @@ Select **bg-en vocabulary** instead of **bg-ru**:
 ```
 cargo run -- --batch-size=10 --batch-number=0 --en
 ```
+
+# Installing cargo and rust
+  Just follow the instructions https://www.rust-lang.org/tools/install
