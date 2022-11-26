@@ -19,21 +19,6 @@ use tui::text::{Span, Text};
 use tui::widgets::{Block, Borders, Paragraph};
 use tui::{backend::CrosstermBackend, Terminal};
 
-//todo 4 shift + enter for scrolling back
-//todo 2 switching vocabularies
-//todo 3 not showing translation key
-//todo 2 show both words in translation
-//todo better layout/formatting
-
-//todo managing words
-
-//todo better help section
-//how to build compile
-
-//todo handling errors
-//todo project description
-//todo installation/compliation description
-
 #[derive(Parser)]
 struct Cli {
     #[arg(long)]
@@ -41,6 +26,9 @@ struct Cli {
 
     #[arg(long)]
     batch_number: usize,
+
+    #[arg(long)]
+    en: bool,
 }
 
 enum Event<I> {
@@ -128,9 +116,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         panic!("Batch size of less than 2 words? You make no sense.");
     }
 
-    // let vocab = get_vocabulary();
-
-    let vocab = get_vocabulary2();
+    let vocab = if args.en {
+        get_vocabulary()
+    } else {
+        get_vocabulary2()
+    };
 
     let vocab_size = vocab.len();
     println!("Words in the dictionary: {:?}", vocab.len());
@@ -301,3 +291,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+
+//todo 1 shift + enter for scrolling back
+//todo 2 not showing translation key
+//todo 3 show both words in translation for en vocab
+//todo better layout/formatting
+
+//todo managing words
+//todo better help section
+//how to build compile
+//todo handling errors
+//todo project description
+//todo installation/compliation description
