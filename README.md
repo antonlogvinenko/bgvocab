@@ -6,7 +6,7 @@ Select **page size** and **page number** of vocabulary to display:
 cargo run -- --batch-size=10 --batch-number=0
 ```
 
-Select **quiz mode**: additional <Enter> or <Backspace> is required to see the translation:
+Select **quiz mode**: additional **Enter** or **Backspace** is required to see the translation:
 ```
 cargo run -- --batch-size=10 --batch-number=0 --quiz
 ```
