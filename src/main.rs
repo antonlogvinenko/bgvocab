@@ -189,7 +189,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let step = if args.quiz { 1 } else { 2 };
     let mut index = 0;
     loop {
-        let mut word_index = index / 2;
+        let word_index = index / 2;
 
         let word = *keys.get(word_index).expect("must be in vocab");
 
