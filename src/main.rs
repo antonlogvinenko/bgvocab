@@ -1,5 +1,6 @@
 use clap::Parser;
 use core::panic;
+use std::process::exit;
 use crossterm::event::{
     self, DisableMouseCapture, EnableMouseCapture, Event as CEvent, KeyCode,
 };
@@ -138,6 +139,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .skip(args.batch_number * args.batch_size)
         .take(args.batch_size)
         .collect();
+
+    if batch_vocab.len() == 0 {
+        eprintln!("Sorry, no words in vocabulary in this range. Try batches of smaller size or batches with smaller indices.");
+        exit(0);
+    }
 
     let keys: Vec<&String> = batch_vocab.keys().collect();
 
@@ -301,14 +307,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 
-//todo 1 shift + enter for scrolling back
-//todo 2 not showing translation key
-//todo 3 show both words in translation for en vocab
-//todo better layout/formatting
-
-//todo managing words
 //todo better help section
-//how to build compile
-//todo handling errors
+//todo how to build compile
 //todo project description
 //todo installation/compliation description
+
+//todo show both words in translation for en vocab
+//todo better layout/formatting
+//todo managing words
+//todo proper errors handling
