@@ -7,7 +7,7 @@ use crossterm::terminal::{
 };
 use std::collections::BTreeMap;
 use std::fs::File;
-use std::io::{self, prelude::*, BufReader, Lines};
+use std::io::{self, prelude::*, BufReader, Lines, ErrorKind};
 use std::ops::Add;
 use std::sync::mpsc::{self, RecvError};
 use std::thread::{self};
@@ -88,9 +88,9 @@ fn get_en_vocabulary() -> Result<Vocab, VocabError> {
         match line {
             Err(e) => {
                 eprintln!("Failed to read line. {}", e);
-                panic!("Vocabulary could not be read");
+                return Err(std::io::Error::new(ErrorKind::NotFound, "Vocabulary could not be read"))?;
             }
-            Ok(str) => add_to_vocabulary(&mut vocabulary, &str)?,
+            Ok(str) => add_to_vocabulary(&mut vocabulary, &str)?
         }
     }
 
