@@ -1,4 +1,5 @@
 use clap::Parser;
+use thiserror::Error;
 use core::panic;
 use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, Event as CEvent, KeyCode};
 use crossterm::terminal::{
@@ -8,7 +9,7 @@ use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::{self, prelude::*, BufReader, Lines};
 use std::ops::Add;
-use std::sync::mpsc;
+use std::sync::mpsc::{self, RecvError};
 use std::thread::{self};
 use std::time::{Duration, Instant};
 use tui::layout::{Constraint, Direction, Layout};
@@ -16,6 +17,25 @@ use tui::style::{Color, Modifier, Style};
 use tui::text::{Span, Text};
 use tui::widgets::{Block, Borders, Paragraph};
 use tui::{backend::CrosstermBackend, Terminal};
+
+//https://docs.rs/thiserror/latest/thiserror/
+#[derive(Error, Debug)]
+pub enum VocabErrorX {
+    #[error("data store disconnected")]
+    Disconnect(#[from] io::Error),
+
+    #[error("data store disconnected")]
+    Disconnect2(#[from] RecvError),
+    // #[error("the data for key `{0}` is not available")]
+    // Redaction(String),
+    // #[error("invalid header (expected {expected:?}, found {found:?})")]
+    // InvalidHeader {
+    //     expected: String,
+    //     found: String,
+    // },
+    // #[error("unknown data store error")]
+    // Unknown,
+}
 
 #[derive(Parser)]
 struct Cli {
@@ -43,40 +63,45 @@ fn lines(path: &str) -> io::Result<Lines<BufReader<File>>> {
     Ok(reader.lines())
 }
 
-fn add_to_vocabulary(vocab: &mut BTreeMap<String, Vec<String>>, str: &String) {
+fn add_to_vocabulary(vocab: &mut BTreeMap<String, Vec<String>>, str: &String) -> Result<(), VocabError> {
     //No, xml parsers make this code even worse
     //Dealing with a single-tag constant-length xml wrapper here
     let x1 = str.split_at(92).1;
-    let pos = x1.find("\">").expect("Unparseable line");
+    let pos = x1.find("\">").ok_or("Unparseable line")?;
     let x2 = x1.split_at(pos);
     let key = x2.0;
     let value = String::from(&(x2.1)[2..(x2.1.len() - 10)]);
     //remove stress
     let chill = key.replace('\u{0301}', "");
     vocab.entry(chill).or_insert(Vec::new()).push(value);
+    Ok(())
 }
 
-fn get_en_vocabulary() -> BTreeMap<String, Vec<String>> {
+//https://nrc.github.io/error-docs/rust-errors/result-and-error.html
+type Vocab = BTreeMap<String, Vec<String>>;
+type VocabError = Box<dyn std::error::Error>;
+
+fn get_en_vocabulary() -> Result<Vocab, VocabError> {
     let vocab_path = "./bg-en.xml";
     let mut vocabulary: BTreeMap<String, Vec<String>> = BTreeMap::new();
-    for line in lines(vocab_path).expect("Can't read vocabulary") {
+    for line in lines(vocab_path)? {
         match line {
             Err(e) => {
                 eprintln!("Failed to read line. {}", e);
                 panic!("Vocabulary could not be read");
             }
-            Ok(str) => add_to_vocabulary(&mut vocabulary, &str),
+            Ok(str) => add_to_vocabulary(&mut vocabulary, &str)?,
         }
     }
 
     //skip entries with names
-    vocabulary.into_iter().skip(2287).collect()
+    Ok(vocabulary.into_iter().skip(2287).collect())
 }
 
-fn get_ru_vocabulary() -> BTreeMap<String, Vec<String>> {
+fn get_ru_vocabulary() -> Result<Vocab, VocabError> {
     let vocab_path = "./vocab.txt";
     let mut vocabulary: BTreeMap<String, Vec<String>> = BTreeMap::new();
-    let mut x = lines(vocab_path).expect("must");
+    let mut x = lines(vocab_path)?;
 
     loop {
         let maybe_word = x.next();
@@ -84,8 +109,7 @@ fn get_ru_vocabulary() -> BTreeMap<String, Vec<String>> {
             Some(Ok(mut word)) => {
                 let translation = x
                     .next()
-                    .expect("translation must be present")
-                    .expect("must");
+                    .ok_or("translation must be present")??;
 
                 let indices: Vec<(usize, char)> = word.char_indices().collect();
                 let p = indices.iter().position(|(_, c)| c.is_uppercase());
@@ -105,7 +129,7 @@ fn get_ru_vocabulary() -> BTreeMap<String, Vec<String>> {
                 vocabulary.insert(word, vec![translation]);
                 x.next();
             }
-            _ => return vocabulary,
+            _ => return Ok(vocabulary),
         }
     }
 }
@@ -121,7 +145,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         get_en_vocabulary()
     } else {
         get_ru_vocabulary()
-    };
+    }?;
 
     let vocab_size = vocab.len();
     println!("Words in the dictionary: {:?}", vocab.len());
@@ -165,7 +189,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    enable_raw_mode().expect("must be able to run in raw mode");
+    enable_raw_mode()?;
     let mut stdout = io::stdout();
     crossterm::execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
@@ -177,7 +201,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     loop {
         let word_index = index / 2;
 
-        let word = *keys.get(word_index).expect("must be in vocab");
+        let word = *keys.get(word_index).ok_or("must be in vocab")?;
 
         let translation: String = if args.quiz && index % 2 == 0 {
             String::default()
@@ -185,9 +209,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             html2text::from_read(
                 batch_vocab
                     .get(word)
-                    .expect("must be in vocab")
+                    .ok_or("must be in vocab")?
                     .get(0)
-                    .expect("must be in vocab")
+                    .ok_or("must be in vocab")?
                     .as_bytes(),
                 100,
             )
@@ -199,7 +223,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .margin(1)
                 .constraints(
                     [
-                        Constraint::Percentage(20),
+                        Constraint::Percentage(10),
                         Constraint::Percentage(50),
                         Constraint::Percentage(30),
                     ]
