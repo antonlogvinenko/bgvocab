@@ -17,24 +17,7 @@ use tui::text::{Span, Text};
 use tui::widgets::{Block, Borders, Paragraph};
 use tui::{backend::CrosstermBackend, Terminal};
 
-//https://docs.rs/thiserror/latest/thiserror/
-#[derive(Error, Debug)]
-pub enum VocabErrorX {
-    #[error("data store disconnected")]
-    Disconnect(#[from] io::Error),
-    
-    #[error("data store disconnected")]
-    Disconnect2(#[from] RecvError),
-    // #[error("the data for key `{0}` is not available")]
-    // Redaction(String),
-    // #[error("invalid header (expected {expected:?}, found {found:?})")]
-    // InvalidHeader {
-    //     expected: String,
-    //     found: String,
-    // },
-    // #[error("unknown data store error")]
-    // Unknown,
-}
+
 
 #[derive(Parser)]
 struct Cli {
