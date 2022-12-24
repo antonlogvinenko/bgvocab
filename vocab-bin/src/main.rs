@@ -314,6 +314,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+// move common code to lib
+// add iterator over the code
+// compile to 2 targets
+// use compield wasm
+// how to download file
+
+//todo wrap vocab in VocabIterator(type: VocabType{en | ru}, batch_number: int, batch_size, testing: boolean)
+//todo add webasm wrapper
+//todo call VocabIterator.next() from JS
+//todo create full web UI
+//todo deploy somewhere
+//todo several words - several stress points
+
+
 //todo better help section
 //todo how to build compile
 //todo project description
