@@ -8,7 +8,7 @@ use crossterm::terminal::{
 use std::collections::BTreeMap;
 use std::io::{self};
 use std::ops::Add;
-use std::sync::mpsc::{self, RecvError};
+use std::sync::mpsc::{self};
 use std::thread::{self};
 use std::time::{Duration, Instant};
 use tui::layout::{Constraint, Direction, Layout};
@@ -220,11 +220,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-// move common code to lib
+// move File -> string
+// how to read File in web
 // add iterator over the code
-// compile to 2 targets
-// use compield wasm
-// how to download file
+// display a single word in web
 
 //todo wrap vocab in VocabIterator(type: VocabType{en | ru}, batch_number: int, batch_size, testing: boolean)
 //todo add webasm wrapper
