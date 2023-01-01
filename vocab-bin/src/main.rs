@@ -220,10 +220,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-// move File -> string
-// how to read File in web
-// add iterator over the code
-// display a single word in web
+// backend method for requesting several words
+// ui to select and iterate through words
 
 //todo wrap vocab in VocabIterator(type: VocabType{en | ru}, batch_number: int, batch_size, testing: boolean)
 //todo add webasm wrapper

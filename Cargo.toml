@@ -1,2 +1,2 @@
 [workspace]
-members = ["vocab-lib", "vocab-bin", "vocab-wasm"]
+members = ["vocab-lib", "vocab-bin", "vocab-web"]
