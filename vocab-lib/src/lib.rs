@@ -32,7 +32,7 @@ pub fn add_to_vocabulary(vocab: &mut BTreeMap<String, Vec<String>>, str: &String
 
 
 pub fn get_en_vocabulary() -> Result<Vocab, VocabError> {
-    let vocab_path = "./bg-en.xml";
+    let vocab_path = "../bg-en.xml";
     let mut vocabulary: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for line in lines(vocab_path)? {
         match line {
@@ -49,7 +49,7 @@ pub fn get_en_vocabulary() -> Result<Vocab, VocabError> {
 }
 
 pub fn get_ru_vocabulary() -> Result<Vocab, VocabError> {
-    let vocab_path = "./vocab.txt";
+    let vocab_path = "../vocab.txt";
     let mut vocabulary: BTreeMap<String, Vec<String>> = BTreeMap::new();
     let mut x = lines(vocab_path)?;
 

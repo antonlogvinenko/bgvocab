@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 rocket = "0.4.5"
+vocab-lib = { version = "*", path = "../vocab-lib" }
