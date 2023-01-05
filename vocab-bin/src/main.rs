@@ -1,5 +1,6 @@
 use clap::Parser;
 use thiserror::Error;
+use vocab_lib::{draw_stress, VocabWord};
 use core::panic;
 use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, Event as CEvent, KeyCode};
 use crossterm::terminal::{
@@ -58,7 +59,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Batches amount: {}", vocab.len() / args.batch_size);
 
-    let batch_vocab: BTreeMap<String, Vec<String>> = vocab
+    let batch_vocab: BTreeMap<VocabWord, Vec<String>> = vocab
         .into_iter()
         .skip(args.batch_number * args.batch_size)
         .take(args.batch_size)
@@ -69,7 +70,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let keys: Vec<&String> = batch_vocab.keys().collect();
+    let keys: Vec<&VocabWord> = batch_vocab.keys().collect();
 
     let (tx, rx) = mpsc::channel();
     let tick_rate = Duration::from_millis(200);
@@ -108,6 +109,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let word_index = index / 2;
 
         let word = *keys.get(word_index).ok_or("must be in vocab")?;
+        let drawn_word: String = draw_stress(&word.0);
 
         let translation: String = if args.quiz && index % 2 == 0 {
             String::default()
@@ -137,7 +139,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )
                 .split(f.size());
 
-            let text = format!(" [{}/{}] \n\n {}\n", word_index + 1, args.batch_size, word);
+            let text = format!(" [{}/{}] \n\n {}\n", word_index + 1, args.batch_size, drawn_word);
             let word_widget = Paragraph::new(Text::styled(
                 text,
                 Style::default()

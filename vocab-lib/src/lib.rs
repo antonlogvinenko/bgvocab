@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, io::{BufReader, Lines, self, BufRead, ErrorKind}, fs::File};
+use std::{collections::BTreeMap, io::{BufReader, Lines, self, BufRead, ErrorKind}, fs::File, cmp::Ordering};
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -6,9 +6,19 @@ use std::{collections::BTreeMap, io::{BufReader, Lines, self, BufRead, ErrorKind
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-pub type Vocab = BTreeMap<String, Vec<String>>;
+#[derive(Eq, PartialEq, PartialOrd)]
+pub struct VocabWord(pub String);
+
+pub type Vocab = BTreeMap<VocabWord, Vec<String>>;
 pub type VocabError = Box<dyn std::error::Error>;
 // type VocabError = VocabErrorX;
+
+
+impl Ord for VocabWord {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.0.to_lowercase().cmp(&other.0.to_lowercase())
+    }
+}
 
 pub fn lines(path: &str) -> io::Result<Lines<BufReader<File>>> {
     let file = File::open(path)?;
@@ -16,7 +26,7 @@ pub fn lines(path: &str) -> io::Result<Lines<BufReader<File>>> {
     Ok(reader.lines())
 }
 
-pub fn add_to_vocabulary(vocab: &mut BTreeMap<String, Vec<String>>, str: &String) -> Result<(), VocabError> {
+pub fn add_to_vocabulary(vocab: &mut BTreeMap<VocabWord, Vec<String>>, str: &String) -> Result<(), VocabError> {
     //No, xml parsers make this code even worse
     //Dealing with a single-tag constant-length xml wrapper here
     let x1 = str.split_at(92).1;
@@ -26,14 +36,14 @@ pub fn add_to_vocabulary(vocab: &mut BTreeMap<String, Vec<String>>, str: &String
     let value = String::from(&(x2.1)[2..(x2.1.len() - 10)]);
     //remove stress
     let chill = key.replace('\u{0301}', "");
-    vocab.entry(chill).or_insert(Vec::new()).push(value);
+    vocab.entry(VocabWord(chill)).or_insert(Vec::new()).push(value);
     Ok(())
 }
 
 
 pub fn get_en_vocabulary() -> Result<Vocab, VocabError> {
     let vocab_path = "../bg-en.xml";
-    let mut vocabulary: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    let mut vocabulary: BTreeMap<VocabWord, Vec<String>> = BTreeMap::new();
     for line in lines(vocab_path)? {
         match line {
             Err(e) => {
@@ -48,9 +58,28 @@ pub fn get_en_vocabulary() -> Result<Vocab, VocabError> {
     Ok(vocabulary.into_iter().skip(2287).collect())
 }
 
+pub fn draw_stress(word: &String) -> String {
+    let mut drawn = String::from(word);
+    let indices: Vec<(usize, char)> = word.char_indices().collect();
+    let p = indices.iter().position(|(_, c)| c.is_uppercase());
+    match p {
+        Some(pos) => {
+            drawn = drawn.to_lowercase();
+            let ins_at = if pos == indices.len() - 1 {
+                word.len()
+            } else {
+                indices.get(pos + 1).unwrap().0
+            };
+            drawn.insert(ins_at, '\u{0301}');
+        }
+        None => {}
+    }
+    drawn
+}
+
 pub fn get_ru_vocabulary() -> Result<Vocab, VocabError> {
     let vocab_path = "../vocab.txt";
-    let mut vocabulary: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    let mut vocabulary: BTreeMap<VocabWord, Vec<String>> = BTreeMap::new();
     let mut x = lines(vocab_path)?;
 
     loop {
@@ -61,22 +90,7 @@ pub fn get_ru_vocabulary() -> Result<Vocab, VocabError> {
                     .next()
                     .ok_or(std::io::Error::new(ErrorKind::NotFound, "translation must be present"))??;
 
-                let indices: Vec<(usize, char)> = word.char_indices().collect();
-                let p = indices.iter().position(|(_, c)| c.is_uppercase());
-                match p {
-                    Some(pos) => {
-                        word = word.to_lowercase();
-                        let ins_at = if pos == indices.len() - 1 {
-                            word.len()
-                        } else {
-                            indices.get(pos + 1).unwrap().0
-                        };
-                        word.insert(ins_at, '\u{0301}');
-                    }
-                    None => {}
-                }
-
-                vocabulary.insert(word, vec![translation]);
+                vocabulary.insert(VocabWord(word), vec![translation]);
                 x.next();
             }
             _ => return Ok(vocabulary),
