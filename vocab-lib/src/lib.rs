@@ -60,18 +60,18 @@ pub fn get_en_vocabulary() -> Result<Vocab, VocabError> {
 
 pub fn draw_stress(word: &String) -> String {
     let mut drawn = String::from(word);
-    let indices: Vec<(usize, char)> = word.char_indices().collect();
-    let p = indices.iter()
+    let chars: Vec<(usize, char)> = word.char_indices().collect();
+    let chars_idxs = chars.iter()
         .enumerate()
-        .map(|(idx, (_, c))| (idx, c))
-        .filter(|(_, c)| c.is_uppercase())
-        .map(|(idx, c)| idx)
+        .filter_map(|(idx, (_, c))| if c.is_uppercase() { Some(idx) } else { None })
         .rev();
-    for pos in p {
-        let ins_at = if pos == indices.len() - 1 {
+    for char_idx in chars_idxs {
+        let ins_at = if char_idx == chars.len() - 1 {
+            //if last character then insert at byte number eq to word length
             word.len()
         } else {
-            indices.get(pos + 1).unwrap().0
+            //if not last character then insert at its byte number
+            chars.get(char_idx + 1).unwrap().0
         };
         drawn.insert(ins_at, '\u{0301}');
     }
