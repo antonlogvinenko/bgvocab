@@ -65,12 +65,13 @@ pub fn draw_stress(word: &String) -> String {
         .enumerate()
         .map(|(idx, (_, c))| (idx, c))
         .filter(|(_, c)| c.is_uppercase())
+        .map(|(idx, c)| idx)
         .rev();
     for pos in p {
-        let ins_at = if pos.0 == indices.len() - 1 {
+        let ins_at = if pos == indices.len() - 1 {
             word.len()
         } else {
-            indices.get(pos.0 + 1).unwrap().0
+            indices.get(pos + 1).unwrap().0
         };
         drawn.insert(ins_at, '\u{0301}');
     }
