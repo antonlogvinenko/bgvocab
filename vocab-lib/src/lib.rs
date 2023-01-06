@@ -61,14 +61,21 @@ pub fn get_en_vocabulary() -> Result<Vocab, VocabError> {
 pub fn draw_stress(word: &String) -> String {
     let mut drawn = String::from(word);
     let indices: Vec<(usize, char)> = word.char_indices().collect();
-    let p = indices.iter().position(|(_, c)| c.is_uppercase());
+    // .position(|(_, c)| c.is_uppercase());
+    let p = indices.iter()
+        .enumerate()
+        .map(|(idx, (b, c))| (idx, c))
+        .filter(|(_, c)| c.is_uppercase())
+        .rev()
+        .last();
+    //todo how to replace a single char to lowercase?
     match p {
         Some(pos) => {
-            drawn = drawn.to_lowercase();
-            let ins_at = if pos == indices.len() - 1 {
+            // drawn = drawn.to_lowercase();
+            let ins_at = if pos.0 == indices.len() - 1 {
                 word.len()
             } else {
-                indices.get(pos + 1).unwrap().0
+                indices.get(pos.0 + 1).unwrap().0
             };
             drawn.insert(ins_at, '\u{0301}');
         }
