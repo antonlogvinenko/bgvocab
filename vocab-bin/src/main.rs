@@ -1,5 +1,4 @@
 use clap::Parser;
-use thiserror::Error;
 use vocab_lib::{draw_stress, VocabWord};
 use core::panic;
 use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, Event as CEvent, KeyCode};

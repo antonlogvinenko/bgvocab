@@ -6,7 +6,7 @@ extern crate rocket;
 use std::collections::BTreeMap;
 
 use rocket::{response::content::Json};
-use vocab_lib::{get_en_vocabulary, get_ru_vocabulary};
+use vocab_lib::{get_ru_vocabulary, VocabWord};
 
 #[get("/hello?<page>&<size>")]
 fn hello(page: Option<usize>, size: Option<usize>) -> Json<String> {
@@ -14,14 +14,14 @@ fn hello(page: Option<usize>, size: Option<usize>) -> Json<String> {
     let mut s: usize = size.unwrap_or(10);
 
     let vocab = get_ru_vocabulary().unwrap();
-    let batch_vocab: BTreeMap<String, Vec<String>> = vocab
+    let batch_vocab: BTreeMap<VocabWord, Vec<String>> = vocab
         .into_iter()
         .skip(p * s)
         .take(s)
         .collect();
 
-    println!(">>>> {:?}", batch_vocab);
-    Json(format!("{:?}", batch_vocab))
+    // println!(">>>> {:?}", batch_vocab);
+    Json(format!("{:?}", ""))
 
 //         "{
 //     'status': 'success',

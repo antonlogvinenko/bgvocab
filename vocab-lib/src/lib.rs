@@ -64,7 +64,7 @@ pub fn draw_stress(word: &String) -> String {
     // .position(|(_, c)| c.is_uppercase());
     let p = indices.iter()
         .enumerate()
-        .map(|(idx, (b, c))| (idx, c))
+        .map(|(idx, (_, c))| (idx, c))
         .filter(|(_, c)| c.is_uppercase())
         .rev();
     //todo how to replace a single char to lowercase?
@@ -87,7 +87,7 @@ pub fn get_ru_vocabulary() -> Result<Vocab, VocabError> {
     loop {
         let maybe_word = x.next();
         match maybe_word {
-            Some(Ok(mut word)) => {
+            Some(Ok(word)) => {
                 let translation = x
                     .next()
                     .ok_or(std::io::Error::new(ErrorKind::NotFound, "translation must be present"))??;
