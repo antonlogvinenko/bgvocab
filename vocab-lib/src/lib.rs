@@ -66,22 +66,17 @@ pub fn draw_stress(word: &String) -> String {
         .enumerate()
         .map(|(idx, (b, c))| (idx, c))
         .filter(|(_, c)| c.is_uppercase())
-        .rev()
-        .last();
+        .rev();
     //todo how to replace a single char to lowercase?
-    match p {
-        Some(pos) => {
-            // drawn = drawn.to_lowercase();
-            let ins_at = if pos.0 == indices.len() - 1 {
-                word.len()
-            } else {
-                indices.get(pos.0 + 1).unwrap().0
-            };
-            drawn.insert(ins_at, '\u{0301}');
-        }
-        None => {}
+    for pos in p {
+        let ins_at = if pos.0 == indices.len() - 1 {
+            word.len()
+        } else {
+            indices.get(pos.0 + 1).unwrap().0
+        };
+        drawn.insert(ins_at, '\u{0301}');
     }
-    drawn
+    drawn.to_lowercase()
 }
 
 pub fn get_ru_vocabulary() -> Result<Vocab, VocabError> {
