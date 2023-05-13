@@ -32,6 +32,9 @@ struct Cli {
 
     #[arg(long)]
     quiz: bool,
+
+    #[arg(long)]
+    double: bool
 }
 
 enum Event<I> {
@@ -69,7 +72,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let keys: Vec<&VocabWord> = batch_vocab.keys().collect();
+    let mut keys: Vec<&VocabWord> = batch_vocab.keys().collect();
+    if args.double {
+        keys.append(&mut batch_vocab.keys().collect());
+    }
 
     let (tx, rx) = mpsc::channel();
     let tick_rate = Duration::from_millis(200);
@@ -138,7 +144,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )
                 .split(f.size());
 
-            let text = format!(" [{}/{}] \n\n {}\n", word_index + 1, args.batch_size, drawn_word);
+            let text = format!(" [{}/{}] \n\n {}\n", word_index + 1, keys.len(), drawn_word);
             let word_widget = Paragraph::new(Text::styled(
                 text,
                 Style::default()
