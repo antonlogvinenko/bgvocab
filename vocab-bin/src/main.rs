@@ -57,7 +57,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }?;
 
     let vocab_size = vocab.len();
-    println!("Words in the dictionary: {:?}", vocab.len());
+    println!("Words in the dictionary: {vocab_size:?}");
 
     println!("Batches amount: {}", vocab.len() / args.batch_size);
 
