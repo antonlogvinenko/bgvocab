@@ -48,7 +48,6 @@ fn generate_pdf(fonts: &String, batch_vocab: &BTreeMap<VocabWord, Vec<String>>) 
     .expect("Failed to load font family");
     
     let mut doc = genpdf::Document::new(font_family);
-    
     doc.set_title("BG vocabulary");
 
     let mut decorator = genpdf::SimplePageDecorator::new();
@@ -61,16 +60,12 @@ fn generate_pdf(fonts: &String, batch_vocab: &BTreeMap<VocabWord, Vec<String>>) 
     let mut style_translation = style::Style::new();
     style_translation.set_font_size(20);
 
-
-    let keys = batch_vocab.keys();
-
-    for key in keys {
+    for key in batch_vocab.keys() {
         let drawn_word: String = draw_stress(&key.0);
         let word = batch_vocab.get(key)
             .ok_or("must be in vocab")?
             .get(0)
             .ok_or("must be in vocab")?;
-
 
         doc.push(genpdf::elements::Paragraph::new(&drawn_word).styled(style_word));
         doc.push(genpdf::elements::Break::new(45));
