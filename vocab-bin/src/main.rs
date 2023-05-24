@@ -51,7 +51,7 @@ fn generate_pdf(fonts: &String, batch_vocab: &BTreeMap<VocabWord, Vec<String>>) 
     .expect("Failed to load font family");
     
     let mut i = 0;
-    for chunks in batch_vocab.keys().collect::<Vec<_>>().chunks(100) {
+    for chunks in batch_vocab.keys().collect::<Vec<_>>().chunks(50) {
         i += 1;
         let mut doc = genpdf::Document::new(font_family.clone());
         doc.set_title(format!("BG vocabulary: part {i}"));
@@ -69,7 +69,7 @@ fn generate_pdf(fonts: &String, batch_vocab: &BTreeMap<VocabWord, Vec<String>>) 
         let mut page = 0;
         for key in chunks {
             page += 1;
-            
+
             if page != 1 {
                 doc.push(genpdf::elements::PageBreak::new());
             }
