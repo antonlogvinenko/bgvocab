@@ -34,7 +34,10 @@ struct Cli {
     quiz: bool,
 
     #[arg(long)]
-    double: bool
+    double: bool,
+
+    #[arg(long)]
+    pdf: bool
 }
 
 enum Event<I> {
@@ -47,35 +50,45 @@ fn generate_pdf(fonts: &String, batch_vocab: &BTreeMap<VocabWord, Vec<String>>) 
     genpdf::fonts::from_files(fonts, "LiberationMono", None)
     .expect("Failed to load font family");
     
-    let mut doc = genpdf::Document::new(font_family);
-    doc.set_title("BG vocabulary");
+    let mut i = 0;
+    for chunks in batch_vocab.keys().collect::<Vec<_>>().chunks(100) {
+        i += 1;
+        let mut doc = genpdf::Document::new(font_family.clone());
+        doc.set_title(format!("BG vocabulary: part {i}"));
 
-    let mut decorator = genpdf::SimplePageDecorator::new();
-    decorator.set_margins(10);
-    doc.set_page_decorator(decorator);
+        let mut decorator = genpdf::SimplePageDecorator::new();
+        decorator.set_margins(10);
+        doc.set_page_decorator(decorator);
 
-    let mut style_word = style::Style::new();
-    style_word.set_font_size(40);
+        let mut style_word = style::Style::new();
+        style_word.set_font_size(40);
 
-    let mut style_translation = style::Style::new();
-    style_translation.set_font_size(20);
+        let mut style_translation = style::Style::new();
+        style_translation.set_font_size(20);
 
-    for key in batch_vocab.keys() {
-        let drawn_word: String = draw_stress(&key.0);
-        let word = batch_vocab.get(key)
-            .ok_or("must be in vocab")?
-            .get(0)
-            .ok_or("must be in vocab")?;
+        let mut page = 0;
+        for key in chunks {
+            page += 1;
+            
+            if page != 1 {
+                doc.push(genpdf::elements::PageBreak::new());
+            }
 
-        doc.push(genpdf::elements::Paragraph::new(&drawn_word).styled(style_word));
-        doc.push(genpdf::elements::Break::new(45));
-        let mut translation_paragraph = genpdf::elements::Paragraph::new(word);
-        translation_paragraph.set_alignment(genpdf::Alignment::Right);
-        doc.push(translation_paragraph.styled(style_translation));
-        doc.push(genpdf::elements::PageBreak::new());
+            let drawn_word: String = draw_stress(&key.0);
+            let word = batch_vocab.get(key)
+                .ok_or("must be in vocab")?
+                .get(0)
+                .ok_or("must be in vocab")?;
+    
+            doc.push(genpdf::elements::Paragraph::new(&drawn_word).styled(style_word));
+            doc.push(genpdf::elements::Break::new(45));
+            let mut translation_paragraph = genpdf::elements::Paragraph::new(word);
+            translation_paragraph.set_alignment(genpdf::Alignment::Right);
+            doc.push(translation_paragraph.styled(style_translation));
+        }
+
+        doc.render_to_file(format!("output_{i}.pdf")).expect("Failed to write PDF file");        
     }
-
-    doc.render_to_file("output.pdf").expect("Failed to write PDF file");
 
     Ok(())
 }
@@ -94,15 +107,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         vocab_lib::get_ru_vocabulary()
     }?;
 
-    match env::var("BGVOCAB_FONTS") {
-        Ok(fonts) => {
-            generate_pdf(&fonts, &vocab)?;
-            println!("Font directory found, will generate pdf");
+    if args.pdf {
+        match env::var("BGVOCAB_FONTS") {
+            Ok(fonts) => {
+                generate_pdf(&fonts, &vocab)?;
+                println!("Font directory found, will generate pdf");
+            }
+            Err(_e) => {
+                println!("Font directory not found, not generating pdf");
+            }
         }
-        Err(_e) => {
-            println!("Font directory not found, not generating pdf");
-        }
+        return Ok(())
     }
+    
 
     let vocab_size = vocab.len();
     println!("Words in the dictionary: {vocab_size:?}");
