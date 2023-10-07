@@ -37,7 +37,10 @@ struct Cli {
     double: bool,
 
     #[arg(long)]
-    pdf: bool
+    pdf: bool,
+
+    #[arg(long)]
+    small: bool,
 }
 
 enum Event<I> {
@@ -104,7 +107,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let vocab = if args.en {
         vocab_lib::get_en_vocabulary()
     } else {
-        vocab_lib::get_ru_vocabulary()
+        vocab_lib::get_ru_vocabulary(args.small)
     }?;
 
     if args.pdf {
