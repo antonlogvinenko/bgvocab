@@ -181,7 +181,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     loop {
         let word_index = index / 2;
 
-        let word = *keys.get(word_index).ok_or("must be in vocab")?;
+        let word: &VocabWord = *keys.get(word_index).ok_or("must be in vocab")?;
         let drawn_word: String = draw_stress(&word.0);
 
         let translation: String = if args.quiz && index % 2 == 0 {
