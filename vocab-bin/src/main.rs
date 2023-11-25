@@ -34,7 +34,7 @@ struct Cli {
     quiz: bool,
 
     #[arg(long)]
-    double: bool,
+    repeat: usize,
 
     #[arg(long)]
     pdf: bool,
@@ -141,8 +141,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let mut keys: Vec<&VocabWord> = batch_vocab.keys().collect();
-    if args.double {
-        keys.append(&mut batch_vocab.keys().collect());
+    if args.repeat != 0 {
+        for _ in 1..args.repeat {
+            keys.append(&mut batch_vocab.keys().collect());    
+        }
     }
 
     let (tx, rx) = mpsc::channel();
